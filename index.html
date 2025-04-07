@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Prompt Editor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Configurar dark mode con Tailwind
+    tailwind.config = {
+      darkMode: 'class',
+    };
+  </script>
+  <style>
+    ::selection { background-color: #93c5fd; color: #1e3a8a; }
+  </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 flex items-center justify-center min-h-screen p-4 transition-colors duration-300">
+  <div class="bg-white dark:bg-gray-800 shadow-xl rounded-2xl max-w-5xl w-full p-6 space-y-6 border border-gray-200 dark:border-gray-700">
+    <div class="flex justify-between items-center">
+      <h1 class="text-2xl font-bold">🧠 Prompt Editor</h1>
+      <button 
+        id="themeToggle" 
+        class="text-sm px-4 py-1 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+      >
+        🌗 Cambiar tema
+      </button>
+    </div>
+
+    <!-- Área de texto expandida -->
+    <textarea 
+      id="promptInput" 
+      placeholder="Escribe aquí tu prompt..." 
+      class="w-full h-[500px] p-4 text-base rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-400 focus:outline-none resize-none"
+    ></textarea>
+
+    <!-- Botones -->
+    <div class="flex flex-wrap gap-4 justify-between">
+      <div class="flex gap-2 flex-wrap">
+        <button 
+          onclick="insertSamplePrompt()" 
+          class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-4 py-2 rounded-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+        >
+          🧪 Prompt de ejemplo
+        </button>
+        <button 
+          onclick="saveToHistory()" 
+          class="bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 transition"
+        >
+          💾 Guardar
+        </button>
+      </div>
+      <button 
+        onclick="copyPrompt()" 
+        class="bg-blue-600 text-white px-6 py-2 rounded-xl hover:bg-blue-700 active:scale-95 transition"
+      >
+        📋 Copiar
+      </button>
+    </div>
+
+    <p id="copyMsg" class="text-sm text-green-500 text-right hidden">✅ Copiado al portapapeles</p>
+
+    <!-- Historial -->
+    <div>
+      <h2 class="text-lg font-semibold mb-2">📜 Historial (últimos 10)</h2>
+      <ul id="historyList" class="space-y-2 max-h-52 overflow-y-auto text-sm">
+        <!-- Historial dinámico -->
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const promptInput = document.getElementById("promptInput");
+    const historyList = document.getElementById("historyList");
+    const copyMsg = document.getElementById("copyMsg");
+    const maxHistory = 10;
+    const themeToggle = document.getElementById("themeToggle");
+
+    // Copiar al portapapeles
+    function copyPrompt() {
+      promptInput.select();
+      promptInput.setSelectionRange(0, 99999);
+      navigator.clipboard.writeText(promptInput.value)
+        .then(() => {
+          copyMsg.classList.remove("hidden");
+          setTimeout(() => copyMsg.classList.add("hidden"), 2000);
+        })
+        .catch(() => alert("❌ No se pudo copiar el texto"));
+    }
+
+    // Prompt de ejemplo
+    function insertSamplePrompt() {
+      promptInput.value = "Actúa como un experto en inteligencia de negocios. Diseña un dashboard con KPIs clave para evaluar la rentabilidad de una cadena de retail en tiempo real.";
+    }
+
+    // Guardar historial
+    function saveToHistory() {
+      const prompt = promptInput.value.trim();
+      if (!prompt) return;
+
+      let history = JSON.parse(localStorage.getItem("promptHistory")) || [];
+      history = [prompt, ...history.filter(p => p !== prompt)].slice(0, maxHistory);
+      localStorage.setItem("promptHistory", JSON.stringify(history));
+      renderHistory();
+    }
+
+    // Mostrar historial
+    function renderHistory() {
+      const history = JSON.parse(localStorage.getItem("promptHistory")) || [];
+      historyList.innerHTML = "";
+
+      history.forEach((item, index) => {
+        const li = document.createElement("li");
+        li.className = "bg-gray-50 dark:bg-gray-700 p-3 rounded-md border border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 transition";
+        li.textContent = `${index + 1}. ${item.length > 100 ? item.slice(0, 100) + "..." : item}`;
+        li.title = item;
+        li.onclick = () => promptInput.value = item;
+        historyList.appendChild(li);
+      });
+    }
+
+    // Modo oscuro
+    function toggleTheme() {
+      const html = document.documentElement;
+      html.classList.toggle("dark");
+
+      const newTheme = html.classList.contains("dark") ? "dark" : "light";
+      localStorage.setItem("theme", newTheme);
+    }
+
+    themeToggle.addEventListener("click", toggleTheme);
+
+    function loadTheme() {
+      const savedTheme = localStorage.getItem("theme");
+      if (savedTheme === "dark") {
+        document.documentElement.classList.add("dark");
+      }
+    }
+
+    // Init
+    window.onload = () => {
+      loadTheme();
+      renderHistory();
+    };
+  </script>
+</body>
+</html>
